@@ -125,7 +125,7 @@ if __name__ == "__main__":
         "--experiment",
         "-e",
         dest="experiment_directory",
-        required=True,
+        default="examples/bottles_dit",
         help="The experiment directory. This directory should include experiment specifications in "
         + '"specs.json", and logging will be done in this directory as well.',
     )
@@ -140,14 +140,14 @@ if __name__ == "__main__":
         "--data",
         "-d",
         dest="data_source",
-        required=True,
+        default="./data",
         help="The data source directory.",
     )
     arg_parser.add_argument(
         "--split",
         "-s",
         dest="split_filename",
-        required=True,
+        default="examples/splits/sv2_bottles_test.json",
         help="The split to evaluate.",
     )
 

@@ -1,8 +1,8 @@
 {
-  "Description" : "This experiment learns a shape representation for sofas using data from ShapeNet version 2.",
+  "Description" : "This experiment learns a shape representation for bottles using data from ShapeNet version 2.",
   "DataSource" : "../ShapeNet/DeepSDF",
-  "TrainSplit": "examples/splits/sv2_sofas_train.json",
-  "TestSplit": "examples/splits/sv2_sofas_test.json",
+  "TrainSplit": "examples/splits/sv2_bottles_train.json",
+  "TestSplit": "examples/splits/sv2_bottles_test.json",
   "NetworkArch" : "deep_implicit_template_decoder",
   "NetworkSpecs" : {
     "warper_kargs": {
@@ -42,7 +42,7 @@
       "Factor" : 0.5
     }],
   "SamplesPerScene" : 5000,
-  "ScenesPerBatch" : 12,
+  "ScenesPerBatch" : 24,
   "DataLoaderThreads" : 0,
   "ClampingDistance" : 0.1,
   "CodeRegularization" : true,

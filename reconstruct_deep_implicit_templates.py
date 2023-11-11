@@ -13,6 +13,7 @@ import numpy as np
 import deep_sdf
 import deep_sdf.workspace as ws
 
+from tqdm import tqdm
 
 def reconstruct(
     decoder,
@@ -254,7 +255,7 @@ if __name__ == "__main__":
         # clamping_function = lambda x: x * specs["ClampingDistance"]
         clamping_function = lambda x : torch.clamp(x, -specs["ClampingDistance"], specs["ClampingDistance"])
 
-    for ii, npz in enumerate(npz_filenames):
+    for ii, npz in tqdm(enumerate(npz_filenames)):
 
         if "npz" not in npz:
             continue

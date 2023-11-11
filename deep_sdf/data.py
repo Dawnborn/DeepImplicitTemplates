@@ -94,6 +94,7 @@ def unpack_sdf_samples(filename, subsample=None):
 
 
 def unpack_sdf_samples_from_ram(data, subsample=None):
+    #junpeng: 从正负样本中各采subsample数量的一半并打乱顺序组成一个（subsample,4）的结果,不足一半随机采样重复
     if subsample is None:
         return data
     pos_tensor = data[0]
@@ -127,12 +128,13 @@ class SDFSamples(torch.utils.data.Dataset):
         self,
         data_source,
         split,
-        subsample,
+        subsample, # SamplesPerScene
         load_ram=False,
         print_filename=False,
         num_files=1000000,
     ):
-        self.subsample = subsample
+        #junpeng: subsample
+        self.subsample = subsample #junpeng: SamplesPerScene 5000
 
         self.data_source = data_source
         self.npyfiles = get_instance_filenames(data_source, split)

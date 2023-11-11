@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 import math
-
+import pdb
 
 class SdfDecoder(nn.Module):
     def __init__(
@@ -62,7 +62,7 @@ class SdfDecoder(nn.Module):
     def forward(self, input):
         xyz = input[:, -3:]
         x = input
-
+        # pdb.set_trace()
         for layer in range(0, self.num_layers - 1):
             lin = getattr(self, "lin" + str(layer))
             if layer != 0 and self.xyz_in_all:
@@ -146,6 +146,7 @@ class Warper(nn.Module):
         self.out_layer_coord_affine.apply(init_out_weights)
 
     def forward(self, input, step=1.0):
+        # pdb.set_trace()
         if step < 1.0:
             input_bk = input.clone().detach()
 
@@ -177,14 +178,23 @@ class Warper(nn.Module):
 
 class Decoder(nn.Module):
     def __init__(self, latent_size, warper_kargs, decoder_kargs):
+        """
+        decoder_kargs
+            {'dims': [256, 256, 256, 256, 256], 'dropout': [0, 1, 2, 3, 4], 'dropout_prob': 0.05, 'norm_layers': [0, 1, 2, 3, 4], 'xyz_in_all': False, 'weight_norm': True}
+        warper_kargs
+            {'hidden_size': 512, 'steps': 8}
+        """
         super(Decoder, self).__init__()
         self.warper = Warper(latent_size, **warper_kargs)
         self.sdf_decoder = SdfDecoder(**decoder_kargs)
+        # pdb.set_trace()
 
     def forward(self, input, output_warped_points=False, output_warping_param=False,
                 step=1.0):
+        #junpeng: input:(SamplesPerScene*ScenesPerBatch,3+Latent_dim)
+        # pdb.set_trace()
         p_final, warping_param, warped_xyzs = self.warper(input, step=step)
-
+        # pdb.set_trace()
         if not self.training:
             x = self.sdf_decoder(p_final)
             if output_warped_points:

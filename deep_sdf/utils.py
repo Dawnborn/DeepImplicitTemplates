@@ -3,7 +3,19 @@
 
 import logging
 import torch
+import time
 
+def my_timer(func):
+    """
+    A decorator that prints the time a function takes to execute.
+    """
+    def wrapper(*args, **kwargs):
+        start_time = time.time()
+        result = func(*args, **kwargs)
+        end_time = time.time()
+        print(f"{func.__name__} ran in: {end_time - start_time} seconds")
+        return result
+    return wrapper
 
 def add_common_args(arg_parser):
     arg_parser.add_argument(
@@ -47,7 +59,7 @@ def configure_logging(args):
         file_logger_handler.setFormatter(formatter)
         logger.addHandler(file_logger_handler)
 
-
+@my_timer
 def decode_sdf(decoder, latent_vector, queries):
     num_samples = queries.shape[0]
 

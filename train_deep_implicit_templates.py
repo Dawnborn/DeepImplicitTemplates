@@ -42,6 +42,7 @@ def append_parameter_magnitudes(param_mag_log, model):
 
 
 def apply_curriculum_l1_loss(pred_sdf_list, sdf_gt, loss_l1_soft, num_sdf_samples):
+    #junpeng: 循环累计损失
     soft_l1_eps_list = [2.5e-2, 1e-2, 2.5e-3, 0]
     soft_l1_lamb_list = [0, 0.1, 0.2, 0.5]
     sdf_loss = []
@@ -92,7 +93,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
         experiment_directory, 'code_bk_%s.tar.gz' % now.strftime('%Y_%m_%d_%H_%M_%S'))
     ws.create_code_snapshot('./', code_bk_path,
                             extensions=('.py', '.json', '.cpp', '.cu', '.h', '.sh'),
-                            exclude=('examples', 'third-party', 'bin'))
+                            exclude=('examples', 'third-party', 'bin')) #junpeng: create backup of current code
 
     specs = ws.load_experiment_specifications(experiment_directory)
 
@@ -335,9 +336,10 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
         for bi, (sdf_data, indices) in enumerate(sdf_loader):
 
             # Process the input data
-            sdf_data = sdf_data.reshape(-1, 4)
+            sdf_data = sdf_data.reshape(-1, 4) #junpeng: ScenesPerBatch,SamplesPerScene,4 -> B*N,4, 会混合各种模型，但会按照indices区分
 
-            num_sdf_samples = sdf_data.shape[0]
+
+            num_sdf_samples = sdf_data.shape[0] #junpeng: ScenesPerBatch*SamplesPerScene
 
             sdf_data.requires_grad = False
 
@@ -353,7 +355,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
                 batch_split,
             )
 
-            sdf_gt = torch.chunk(sdf_gt, batch_split)
+            sdf_gt = torch.chunk(sdf_gt, batch_split) # 进一步分割成subbatch
 
             batch_loss_sdf = 0.0
             batch_loss_pw = 0.0
@@ -365,7 +367,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
 
             for i in range(batch_split):
 
-                batch_vecs = lat_vecs(indices[i])
+                batch_vecs = lat_vecs(indices[i]) #junpeng： indices经过线性层得到latent code，尺寸为(ScenesPerBatch*SamplesPerScene,256)
 
                 input = torch.cat([batch_vecs, xyz[i]], dim=1)
                 xyz_ = xyz[i].cuda()
@@ -379,7 +381,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
                     for k in range(len(pred_sdf_list)):
                         pred_sdf_list[k] = torch.clamp(pred_sdf_list[k], minT, maxT)
 
-                if use_curriculum:
+                if use_curriculum: #junpeng: 监督过程中的warping结果
                     sdf_loss = apply_curriculum_l1_loss(
                         pred_sdf_list, sdf_gt[i].cuda(), loss_l1_soft, num_sdf_samples)
                 else:
@@ -387,13 +389,13 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
                 batch_loss_sdf += sdf_loss.item()
                 chunk_loss = sdf_loss
 
-                if do_code_regularization:
+                if do_code_regularization: #junpeng: 限制latent vec
                     l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=1))
                     reg_loss = l2_size_loss / num_sdf_samples
                     chunk_loss += code_reg_lambda * min(1.0, epoch / 100) * reg_loss.cuda()
                     batch_loss_reg += reg_loss.item()
 
-                if use_pointwise_loss:
+                if use_pointwise_loss: #junpeng: distance between warped and original xyz
                     if use_curriculum:
                         pw_loss = apply_pointwise_reg(warped_xyz_list, xyz_, huber_fn, num_sdf_samples)
                     else:
@@ -472,7 +474,7 @@ if __name__ == "__main__":
         "--experiment",
         "-e",
         dest="experiment_directory",
-        required=True,
+        default="examples/sofas_dit",
         help="The experiment directory. This directory should include "
         + "experiment specifications in 'specs.json', and logging will be "
         + "done in this directory as well.",
@@ -481,7 +483,7 @@ if __name__ == "__main__":
         "--data",
         "-d",
         dest="data_source",
-        required=True,
+        default="./data",
         help="The data source directory.",
     )
     arg_parser.add_argument(
