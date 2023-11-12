@@ -2,13 +2,15 @@ import os
 os.environ['PYOPENGL_PLATFORM'] = 'egl'
 from mesh_to_sdf import sample_sdf_near_surface
 import trimesh
-import pyrender
+# import pyrender
 import numpy as np
 import glob
 import json
 import time
 import pdb
 from tqdm import tqdm
+
+from multiprocessing import Pool, cpu_count
 
 def write_json(filename, data):
     check_dirname(filename)
@@ -19,14 +21,14 @@ def read_json(filename):
 	with open(filename, 'r') as infile:
 		return json.load(infile)
 
-def visualize(points, sdf):
-    colors = np.zeros(points.shape)
-    colors[sdf < 0, 2] = 1
-    colors[sdf > 0, 0] = 1
-    cloud = pyrender.Mesh.from_points(points, colors=colors)
-    scene = pyrender.Scene()
-    scene.add(cloud)
-    viewer = pyrender.Viewer(scene, use_raymond_lighting=True, point_size=2)
+# def visualize(points, sdf):
+#     colors = np.zeros(points.shape)
+#     colors[sdf < 0, 2] = 1
+#     colors[sdf > 0, 0] = 1
+#     cloud = pyrender.Mesh.from_points(points, colors=colors)
+#     scene = pyrender.Scene()
+#     scene.add(cloud)
+#     viewer = pyrender.Viewer(scene, use_raymond_lighting=True, point_size=2)
 
 def check_dirname(path):
     dirname = os.path.dirname(path)
@@ -74,7 +76,7 @@ def main(mesh_name, json_input_root="DATA/ScanARCW/hjp/json_files_v2/", json_out
                                         surface_point_method='scan', sign_method='normal', 
                                         scan_count=100, scan_resolution=400, 
                                         sample_point_count=10000000, normal_sample_count=11, 
-                                        min_size=0, return_gradients=False, near_scale=0.05, far_scale=0.5)
+                                        min_size=0, return_gradients=False, near_scale=0.02, far_scale=0.05)
     pos_mask = sdf > 0
     pos = np.hstack((points[pos_mask], sdf[pos_mask][:, None]))
     neg_mask = sdf <= 0
@@ -97,7 +99,7 @@ def main(mesh_name, json_input_root="DATA/ScanARCW/hjp/json_files_v2/", json_out
 if __name__ == "__main__":
     mesh_names = sorted(glob.glob("DATA/ScanARCW/canonical_mesh_manifoldplus/*/*/model_canonical_manifoldplus.obj"))
     # mesh_names = ["DATA/ScanARCW/canonical_mesh_manifoldplus/02818832/1f11b3d9953fabcf8b4396b18c85cf0f_scene0078_01_ins_2/model_canonical_manifoldplus.obj"]
-    mesh_names = ["DATA/ScanARCW/canonical_mesh_manifoldplus/04256520/1a4a8592046253ab5ff61a3a2a0e2484_scene0484_00_ins_1/model_canonical_manifoldplus.obj"]
+    # mesh_names = ["DATA/ScanARCW/canonical_mesh_manifoldplus/04256520/1a4a8592046253ab5ff61a3a2a0e2484_scene0484_00_ins_1/model_canonical_manifoldplus.obj"]
     # pdb.set_trace()
     log_file = open(f'data_preprocess/log/generate_sdf.txt', 'a')
     for mesh_name in tqdm(mesh_names):
