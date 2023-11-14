@@ -474,7 +474,7 @@ if __name__ == "__main__":
         "--experiment",
         "-e",
         dest="experiment_directory",
-        default="examples/sofas_dit",
+        default="examples/sofas_dit_manifoldplus",
         help="The experiment directory. This directory should include "
         + "experiment specifications in 'specs.json', and logging will be "
         + "done in this directory as well.",
