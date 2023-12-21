@@ -199,6 +199,22 @@ def save_latent_vectors(experiment_directory, filename, latent_vec, epoch):
         os.path.join(latent_codes_dir, filename),
     )
 
+def save_individual_latent_vectors(experiment_directory, npzfiles, latent_vec, epoch):
+    latent_codes_dir = get_latent_codes_dir(experiment_directory, True)
+
+    all_latents = latent_vec.state_dict()
+
+    all_latents_dir = os.path.join(latent_codes_dir,str(epoch))
+
+    if not os.path.exists(all_latents_dir):
+        os.makedirs(all_latents_dir)
+
+    for latent, npzfile in zip(all_latents,npzfiles):
+        latent_file_name = npzfile.split(".")[0]+".pth"
+        torch.save(
+            {"epoch": epoch, "latent_codes": all_latents},
+            os.path.join(all_latents_dir, latent_file_name),
+        )
 
 def save_logs(
     experiment_directory,

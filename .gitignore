@@ -15,6 +15,9 @@ third-party/
 *.zip
 *.bk
 *.tar.gz
+*.tar.xz
+*.pth
+*.curiadmin
 examples/*/*/
 deprecated/
 Logs.pth
@@ -22,3 +25,4 @@ external_testing/
 scripts/
 pretrained_bk/
 .history
+LatentCodes

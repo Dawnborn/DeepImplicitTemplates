@@ -7,6 +7,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import pdb
+
 
 class LipschitzLoss(nn.Module):
     def __init__(self, k, reduction=None):
@@ -16,6 +18,13 @@ class LipschitzLoss(nn.Module):
         self.reduction = reduction
 
     def forward(self, x1, x2, y1, y2):
+        """
+        x1 # torch.Size([1, 625, 1, 3])
+        x2 # torch.Size([1, 1, 4375, 3])
+        y1 # torch.Size([1, 625, 1, 3])
+        y2 # torch.Size([1, 1, 4375, 3])
+        """
+        # pdb.set_trace()
         l = self.relu(torch.norm(y1-y2, dim=-1) / (torch.norm(x1-x2, dim=-1)+1e-3) - self.k)
         # l = torch.clamp(l, 0.0, 5.0)    # avoid
         if self.reduction is None or self.reduction == "mean":

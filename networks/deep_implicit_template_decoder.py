@@ -142,10 +142,17 @@ class Warper(nn.Module):
         self.lstm.apply(init_recurrent_weights)
         lstm_forget_gate_init(self.lstm)
 
-        self.out_layer_coord_affine = nn.Linear(hidden_size, 6)
+        self.out_layer_coord_affine = nn.Linear(hidden_size, 6) # Linear(in_features=512, out_features=6, bias=True)
         self.out_layer_coord_affine.apply(init_out_weights)
 
     def forward(self, input, step=1.0):
+        """
+        input:
+        return:
+            xyz: 最终结果 
+            warping_param: 过程中的state, (N_scene*SamplePerScene,6)
+            warped_xyzs: 过程中的xyz
+        """
         # pdb.set_trace()
         if step < 1.0:
             input_bk = input.clone().detach()
@@ -158,10 +165,12 @@ class Warper(nn.Module):
         warped_xyzs = []
         for s in range(self.steps):
             state = self.lstm(torch.cat([code, xyz], dim=1), states[-1])
+            # state[0] (30000,512), state[1] (30000,512)
             if state[0].requires_grad:
+                # 限制梯度
                 state[0].register_hook(lambda x: x.clamp(min=-10, max=10))
-            a = self.out_layer_coord_affine(state[0])
-            tmp_xyz = torch.addcmul(a[:, 3:], (1 + a[:, :3]), xyz)
+            a = self.out_layer_coord_affine(state[0]) # N_scene*SamplePerScene, c:512 -> 6 
+            tmp_xyz = torch.addcmul(a[:, 3:], (1 + a[:, :3]), xyz) # N_scene*SamplePerScene, 3
 
             warping_param.append(a)
             states.append(state)
@@ -191,7 +200,7 @@ class Decoder(nn.Module):
 
     def forward(self, input, output_warped_points=False, output_warping_param=False,
                 step=1.0):
-        #junpeng: input:(SamplesPerScene*ScenesPerBatch,3+Latent_dim)
+        #junpeng: 输入尺寸:(SamplesPerScene*ScenesPerBatch,3+Latent_dim)
         # pdb.set_trace()
         p_final, warping_param, warped_xyzs = self.warper(input, step=step)
         # pdb.set_trace()

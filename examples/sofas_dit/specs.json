@@ -19,7 +19,7 @@
     }
     },
   "CodeLength" : 256,
-  "NumEpochs" : 2001,
+  "NumEpochs" : 5001,
   "SnapshotFrequency" : 1000,
   "AdditionalSnapshots" : [ 100, 500 ],
   "LearningRateSchedule" : [
@@ -42,7 +42,7 @@
       "Factor" : 0.5
     }],
   "SamplesPerScene" : 5000,
-  "ScenesPerBatch" : 12,
+  "ScenesPerBatch" : 256,
   "DataLoaderThreads" : 0,
   "ClampingDistance" : 0.1,
   "CodeRegularization" : true,

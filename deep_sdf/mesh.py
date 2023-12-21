@@ -9,6 +9,7 @@ import time
 import torch
 
 import deep_sdf.utils
+import pdb
 
 
 def create_mesh(
@@ -195,6 +196,7 @@ def convert_sdf_samples_to_ply(
 
     This function adapted from: https://github.com/RobotLocomotion/spartan
     """
+    # pdb.set_trace()
     start_time = time.time()
 
     if isinstance(input_3d_sdf_array, torch.Tensor):

@@ -18,9 +18,14 @@ def get_instance_filenames(data_source, split):
     for dataset in split:
         for class_name in split[dataset]:
             for instance_name in split[dataset][class_name]:
-                instance_filename = os.path.join(
-                    dataset, class_name, instance_name + ".npz"
-                )
+                if not instance_name.split(".")[-1]=="npz":
+                    instance_filename = os.path.join(
+                        dataset, class_name, instance_name + ".npz"
+                    )
+                else:
+                    instance_filename = os.path.join(
+                        dataset, class_name, instance_name
+                    )
                 if not os.path.isfile(
                     os.path.join(data_source, ws.sdf_samples_subdir, instance_filename)
                 ):

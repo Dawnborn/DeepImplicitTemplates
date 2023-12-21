@@ -67,13 +67,14 @@ def decode_sdf(decoder, latent_vector, queries):
         inputs = queries
         sdf = decoder(inputs)[:, :1]
     else:
-        try:
+        # try:
+        if True:
             latent_repeat = latent_vector.expand(num_samples, -1)
             inputs = torch.cat([latent_repeat, queries], 1)
             with torch.no_grad():
                 sdf = decoder(inputs)[:, :1]
-        except:
-            raise RuntimeError("Failed to decode SDF")
+        # except:
+        #     raise RuntimeError("Failed to decode SDF")
 
     return sdf
 

@@ -14,6 +14,7 @@ import deep_sdf
 import deep_sdf.workspace as ws
 
 from tqdm import tqdm
+import pdb
 
 def reconstruct(
     decoder,
@@ -100,7 +101,8 @@ if __name__ == "__main__":
         "--experiment",
         "-e",
         dest="experiment_directory",
-        required=True,
+        # default="examples/sofas_dit_manifoldplus_scanarcw",
+        default="examples/sofas_dit_manifoldplus_shapenet",
         help="The experiment directory which includes specifications and saved model "
         + "files to use for reconstruction",
     )
@@ -108,7 +110,7 @@ if __name__ == "__main__":
         "--checkpoint",
         "-c",
         dest="checkpoint",
-        default="latest",
+        default="2000",
         help="The checkpoint weights to use. This can be a number indicated an epoch "
         + "or 'latest' for the latest weights (this is the default)",
     )
@@ -116,25 +118,26 @@ if __name__ == "__main__":
         "--data",
         "-d",
         dest="data_source",
-        required=True,
+        default="./data",
         help="The data source directory.",
     )
     arg_parser.add_argument(
         "--split",
         "-s",
         dest="split_filename",
-        required=True,
+        default="examples/splits/sv2_sofas_train_manifoldplus_shapenet.json",
         help="The split to reconstruct.",
     )
     arg_parser.add_argument(
         "--iters",
         dest="iterations",
-        default=800,
+        default=1000,
         help="The number of iterations of latent code optimization to perform.",
     )
     arg_parser.add_argument(
         "--skip",
         dest="skip",
+        default="--skip",
         action="store_true",
         help="Skip meshes which have already been reconstructed.",
     )
@@ -179,6 +182,7 @@ if __name__ == "__main__":
     deep_sdf.configure_logging(args)
 
     def empirical_stat(latent_vecs, indices):
+        # 统计latent vector均值和方差，未用到
         lat_mat = torch.zeros(0).cuda()
         for ind in indices:
             lat_mat = torch.cat([lat_mat, latent_vecs[ind]], 0)
@@ -186,6 +190,7 @@ if __name__ == "__main__":
         var = torch.var(lat_mat, 0)
         return mean, var
 
+    # 'examples/sofas_dit_manifoldplus_scanarcw/specs.json'
     specs_filename = os.path.join(args.experiment_directory, "specs.json")
 
     if not os.path.isfile(specs_filename):
@@ -195,14 +200,16 @@ if __name__ == "__main__":
 
     specs = json.load(open(specs_filename))
 
+    # 定义模型：从specs.json文件里定义模型: from networks.deep_implicit_template_decoder import Decoder
     arch = __import__("networks." + specs["NetworkArch"], fromlist=["Decoder"])
 
-    latent_size = specs["CodeLength"]
+    latent_size = specs["CodeLength"] # 256
 
     decoder = arch.Decoder(latent_size, **specs["NetworkSpecs"])
 
     decoder = torch.nn.DataParallel(decoder)
 
+    # 加载模型: 'examples/sofas_dit_manifoldplus_scanarcw/ModelParameters/2000.pth'
     saved_model_state = torch.load(
         os.path.join(
             args.experiment_directory, ws.model_params_subdir, args.checkpoint + ".pth"
@@ -210,13 +217,15 @@ if __name__ == "__main__":
     )
     saved_model_epoch = saved_model_state["epoch"]
 
-    decoder.load_state_dict(saved_model_state["model_state_dict"])
+    decoder.load_state_dict(saved_model_state["model_state_dict"]) # 
 
     decoder = decoder.module.cuda()
 
+    # 读取数据split：'examples/splits/sv2_sofas_test_manifoldplus_scanarcw.json'
     with open(args.split_filename, "r") as f:
         split = json.load(f)
 
+    # 读取 data/SdfSamples/ScanARCW下数据， ScanARCW为split中数据集名称
     npz_filenames = deep_sdf.data.get_instance_filenames(args.data_source, split)
 
     # random.shuffle(npz_filenames)
@@ -229,6 +238,7 @@ if __name__ == "__main__":
     save_latvec_only = False
     rerun = 0
 
+    # 'examples/sofas_dit_manifoldplus_scanarcw/Reconstructions/2000'
     reconstruction_dir = os.path.join(
         args.experiment_directory, ws.reconstructions_subdir, str(saved_model_epoch)
     )
@@ -236,6 +246,7 @@ if __name__ == "__main__":
     if not os.path.isdir(reconstruction_dir):
         os.makedirs(reconstruction_dir)
 
+    # 'examples/sofas_dit_manifoldplus_scanarcw/Reconstructions/2000/Meshes'
     reconstruction_meshes_dir = os.path.join(
         reconstruction_dir, ws.reconstruction_meshes_subdir
     )
@@ -249,10 +260,13 @@ if __name__ == "__main__":
         os.makedirs(reconstruction_codes_dir)
 
     clamping_function = None
+    
+    # specs["NetworkArch"]="deep_implicit_template_decoder"
     if specs["NetworkArch"] == "deep_sdf_decoder":
         clamping_function = lambda x : torch.clamp(x, -specs["ClampingDistance"], specs["ClampingDistance"])
     elif specs["NetworkArch"] == "deep_implicit_template_decoder":
         # clamping_function = lambda x: x * specs["ClampingDistance"]
+        # 该函数将输入裁剪到给定范围
         clamping_function = lambda x : torch.clamp(x, -specs["ClampingDistance"], specs["ClampingDistance"])
 
     for ii, npz in tqdm(enumerate(npz_filenames)):
@@ -265,6 +279,7 @@ if __name__ == "__main__":
         logging.debug("loading {}".format(npz))
 
         data_sdf = deep_sdf.data.read_sdf_samples_into_ram(full_filename)
+        # data_sdf[0] N_neg,4, data_sdf[1] N_pos,4 每个采样不一样
 
         for k in range(repeat):
 
@@ -290,11 +305,14 @@ if __name__ == "__main__":
 
             logging.info("reconstructing {}".format(npz))
 
+            # 将sdf点云pose和neg部分随机打乱
             data_sdf[0] = data_sdf[0][torch.randperm(data_sdf[0].shape[0])]
             data_sdf[1] = data_sdf[1][torch.randperm(data_sdf[1].shape[0])]
 
+            # 如果该data_sdf已经有latent_code，则直接加载，如果没有
             start = time.time()
-            if not os.path.isfile(latent_filename):
+            # pdb.set_trace()
+            if not os.path.isfile(latent_filename): # 'examples/sofas_dit_manifoldplus_scanarcw/Reconstructions/2000/Codes/ScanARCW/04256520/11d5e99e8faa10ff3564590844406360_scene0604_00_ins_5.pth
                 err, latent = reconstruct(
                     decoder,
                     int(args.iterations),
@@ -314,9 +332,10 @@ if __name__ == "__main__":
 
                 # logging.debug("latent: {}".format(latent.detach().cpu().numpy()))
             else:
-                logging.info("loading from " + latent_filename)
+                logging.info("========= loading from " + latent_filename)
                 latent = torch.load(latent_filename).squeeze(0)
 
+            # decoder不更新权重，decoder纯推理模式
             decoder.eval()
 
             if not os.path.exists(os.path.dirname(mesh_filename)):

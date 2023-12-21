@@ -19,6 +19,9 @@ import deep_sdf
 import deep_sdf.workspace as ws
 from deep_sdf.lr_schedule import get_learning_rate_schedules
 import deep_sdf.loss as loss
+from tqdm import tqdm
+
+import pdb
 
 
 def get_spec_with_default(specs, key, default):
@@ -67,27 +70,33 @@ def apply_pointwise_reg(warped_xyz_list, xyz_, huber_fn, num_sdf_samples):
 
 
 def apply_pointpair_reg(warped_xyz_list, xyz_, loss_lp, scene_per_split, num_sdf_samples):
-    delta_xyz = warped_xyz_list[-1] - xyz_
-    xyz_reshaped = xyz_.view((scene_per_split, -1, 3))
-    delta_xyz_reshape = delta_xyz.view((scene_per_split, -1, 3))
-    k = xyz_reshaped.shape[1] // 8
+    """
+    warped_xyz_list : (num_sdf_samples, 3)
+    
+    """
+    # pdb.set_trace()
+    delta_xyz = warped_xyz_list[-1] - xyz_ # (num_sdf_samples, 3)
+    xyz_reshaped = xyz_.view((scene_per_split, -1, 3)) # (scene_per_split, num_sdf_samples, 3)
+    delta_xyz_reshape = delta_xyz.view((scene_per_split, -1, 3)) # (scene_per_split, num_sdf_samples, 3)
+    k = xyz_reshaped.shape[1] // 8 # num_sdf_samples // 8 = 625
     lp_loss = torch.sum(loss_lp(
-        xyz_reshaped[:, :k].view(scene_per_split, -1, 1, 3),
-        xyz_reshaped[:, k:].view(scene_per_split, 1, -1, 3),
-        delta_xyz_reshape[:, :k].view(scene_per_split, -1, 1, 3),
-        delta_xyz_reshape[:, k:].view(scene_per_split, 1, -1, 3),
+        xyz_reshaped[:, :k].view(scene_per_split, -1, 1, 3), # torch.Size([1, 625, 1, 3])
+        xyz_reshaped[:, k:].view(scene_per_split, 1, -1, 3), # torch.Size([1, 1, 4375, 3])
+        delta_xyz_reshape[:, :k].view(scene_per_split, -1, 1, 3), # torch.Size([1, 625, 1, 3])
+        delta_xyz_reshape[:, k:].view(scene_per_split, 1, -1, 3), # torch.Size([1, 1, 4375, 3])
     )) / num_sdf_samples
     # lp_loss = torch.sum(
     #     loss_sm(xyz_, delta_xyz)
     # ) / num_sdf_samples
+    # pdb.set_trace()
     return lp_loss
 
 
-def main_function(experiment_directory, data_source, continue_from, batch_split):
+def main_function(experiment_directory, data_source, continue_from, batch_split, pretrained=False):
 
-    logging.info("running " + experiment_directory)
+    logging.info("running " + experiment_directory) # 'examples/sofas_dit_manifoldplus_scanarcw'
 
-    # backup code
+    # backup code 将当前代码打包成压缩文件
     now = datetime.datetime.now()
     code_bk_path = os.path.join(
         experiment_directory, 'code_bk_%s.tar.gz' % now.strftime('%Y_%m_%d_%H_%M_%S'))
@@ -102,17 +111,19 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
     # data_source = specs["DataSource"]
     train_split_file = specs["TrainSplit"]
 
+    # import networks.deep_implicit_template_decoder as arch
     arch = __import__("networks." + specs["NetworkArch"], fromlist=["Decoder"])
 
     logging.info(specs["NetworkSpecs"])
 
-    latent_size = specs["CodeLength"]
+    latent_size = specs["CodeLength"] # 256
 
+    # 预先定义checkpoint位置
     checkpoints = list(
         range(
-            specs["SnapshotFrequency"],
-            specs["NumEpochs"] + 1,
-            specs["SnapshotFrequency"],
+            specs["SnapshotFrequency"], # 1000
+            specs["NumEpochs"] + 1, # 2001
+            specs["SnapshotFrequency"], # 1000
         )
     )
 
@@ -122,7 +133,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
 
     lr_schedules = get_learning_rate_schedules(specs)
 
-    grad_clip = get_spec_with_default(specs, "GradientClipNorm", None)
+    grad_clip = get_spec_with_default(specs, "GradientClipNorm", None) # None
     if grad_clip is not None:
         logging.debug("clipping gradients to max norm {}".format(grad_clip))
 
@@ -159,14 +170,16 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
 
     num_samp_per_scene = specs["SamplesPerScene"]
     scene_per_batch = specs["ScenesPerBatch"]
+    # 是否限制sdf值及限制到多少
     clamp_dist = specs["ClampingDistance"]
-    minT = -clamp_dist
-    maxT = clamp_dist
+    minT = -clamp_dist # sdf值下限 -0.1
+    maxT = clamp_dist # sdf值上限 0.1
     enforce_minmax = True
 
     assert(scene_per_batch % batch_split == 0)  # requirements for computing chamfer loss
     scene_per_split = scene_per_batch // batch_split
-
+    
+    # 读取关于latent code的限制部分
     do_code_regularization = get_spec_with_default(specs, "CodeRegularization", True)
     code_reg_lambda = get_spec_with_default(specs, "CodeRegularizationLambda", 1e-4)
 
@@ -182,6 +195,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
     num_epochs = specs["NumEpochs"]
     log_frequency = get_spec_with_default(specs, "LogFrequency", 10)
 
+    # 读取split文件：'examples/splits/sv2_sofas_train_manifoldplus_scanarcw.json'
     with open(train_split_file, "r") as f:
         train_split = json.load(f)
 
@@ -195,12 +209,13 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
         num_data_loader_threads = get_spec_with_default(specs, "DataLoaderThreads", 1)
     logging.debug("loading data with {} threads".format(num_data_loader_threads))
 
+    drop_last =  specs.get("DropLast", True)
     sdf_loader = data_utils.DataLoader(
         sdf_dataset,
         batch_size=scene_per_batch,
         shuffle=True,
         num_workers=num_data_loader_threads,
-        drop_last=True,
+        drop_last=drop_last,
     )
 
     logging.debug("torch num_threads: {}".format(torch.get_num_threads()))
@@ -211,7 +226,8 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
 
     logging.info(decoder)
 
-    lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound)
+    # 初始化latent code，使用正态分布
+    lat_vecs = torch.nn.Embedding(num_scenes, latent_size, max_norm=code_bound) # 待优化的vec, .weight.shape 364 256
     torch.nn.init.normal_(
         lat_vecs.weight.data,
         0.0,
@@ -255,6 +271,18 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
     param_mag_log = {}
 
     start_epoch = 1
+
+    pretrained = specs.get("Pretrained", None)
+    if pretrained:
+        try:
+            model_epoch = ws.load_model_parameters(
+                    experiment_directory, "pretrained", decoder
+                )
+            model_epoch = start_epoch
+            print("pretrained_model loaded!")
+        except:
+            print("pretrained_model not exists!")
+            pdb.set_trace()
 
     if continue_from is not None:
         if not os.path.exists(os.path.join(experiment_directory, ws.latent_codes_subdir, continue_from + ".pth")) or \
@@ -333,7 +361,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
         adjust_learning_rate(lr_schedules, optimizer_all, epoch)
 
         batch_num = len(sdf_loader)
-        for bi, (sdf_data, indices) in enumerate(sdf_loader):
+        for bi, (sdf_data, indices) in tqdm(enumerate(sdf_loader)):
 
             # Process the input data
             sdf_data = sdf_data.reshape(-1, 4) #junpeng: ScenesPerBatch,SamplesPerScene,4 -> B*N,4, 会混合各种模型，但会按照indices区分
@@ -346,15 +374,17 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
             xyz = sdf_data[:, 0:3]
             sdf_gt = sdf_data[:, 3].unsqueeze(1)
 
-            if enforce_minmax:
+            if enforce_minmax: 
+                # 限制 sdf值范围
                 sdf_gt = torch.clamp(sdf_gt, minT, maxT)
-
+            
+            # torch.chunk: 原始的张量被分割成 batch_split 个较小的张量。这些张量被组成一个列表，赋值回给变量 xyz
             xyz = torch.chunk(xyz, batch_split)
+            # ind先被扩充到与xyz向匹配的数量，然后划分batch_split
             indices = torch.chunk(
                 indices.unsqueeze(-1).repeat(1, num_samp_per_scene).view(-1),
                 batch_split,
             )
-
             sdf_gt = torch.chunk(sdf_gt, batch_split) # 进一步分割成subbatch
 
             batch_loss_sdf = 0.0
@@ -367,12 +397,16 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
 
             for i in range(batch_split):
 
-                batch_vecs = lat_vecs(indices[i]) #junpeng： indices经过线性层得到latent code，尺寸为(ScenesPerBatch*SamplesPerScene,256)
+                batch_vecs = lat_vecs(indices[i]) #junpeng： 每个indices有其对应的lat_vecs
 
                 input = torch.cat([batch_vecs, xyz[i]], dim=1)
                 xyz_ = xyz[i].cuda()
 
                 # NN optimization
+                """
+                此时返回warped_xyzs, xs, warping_param，中间过程的SDF点云以及最终的SDF点云
+                list长度为4, 每个尺寸为 Batch场景数*采样数，3
+                """
                 warped_xyz_list, pred_sdf_list, _ = decoder(
                     input, output_warped_points=True, output_warping_param=True)
 
@@ -381,7 +415,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
                     for k in range(len(pred_sdf_list)):
                         pred_sdf_list[k] = torch.clamp(pred_sdf_list[k], minT, maxT)
 
-                if use_curriculum: #junpeng: 监督过程中的warping结果
+                if use_curriculum: #junpeng: 监督过程中的warping的sdf结果
                     sdf_loss = apply_curriculum_l1_loss(
                         pred_sdf_list, sdf_gt[i].cuda(), loss_l1_soft, num_sdf_samples)
                 else:
@@ -389,7 +423,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
                 batch_loss_sdf += sdf_loss.item()
                 chunk_loss = sdf_loss
 
-                if do_code_regularization: #junpeng: 限制latent vec
+                if do_code_regularization: #junpeng: 正则化latent vec
                     l2_size_loss = torch.sum(torch.norm(batch_vecs, dim=1))
                     reg_loss = l2_size_loss / num_sdf_samples
                     chunk_loss += code_reg_lambda * min(1.0, epoch / 100) * reg_loss.cuda()
@@ -425,7 +459,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split)
             loss_log.append(batch_loss)
 
             if grad_clip is not None:
-
+                # 限制梯度
                 torch.nn.utils.clip_grad_norm_(decoder.parameters(), grad_clip)
 
             optimizer_all.step()
@@ -474,7 +508,17 @@ if __name__ == "__main__":
         "--experiment",
         "-e",
         dest="experiment_directory",
-        default="examples/sofas_dit_manifoldplus",
+        # default="examples/sofas_dit_manifoldplus_scanarcw_origprep_all",
+        # default="examples/sofas_dit_minggaodata_all",
+        # default="examples/sofas_dit_minggaodata_all_pretrained",
+        # default="examples/sofas_dit_manifoldplus_scanarcw_origprep_all_pretrained",
+        # default="examples/sofas_dit_minggaodata_single",
+        # default="examples/sofas_dit_manifoldplus_scanarcw_origprep_single",
+        # default="examples/sofas_dit_manifoldplus_scanarcw_origprep_big",
+        # default="examples/sofas_dit_manifoldplus_scanarcw_hjppython",
+        # default="examples/sofas_dit_manifoldplus_shapenet",
+        # default="examples/sofas_dit",
+        default="examples/sofas_dit_manifoldplus_scanarcw_origprep_all_mypretrained",
         help="The experiment directory. This directory should include "
         + "experiment specifications in 'specs.json', and logging will be "
         + "done in this directory as well.",
@@ -490,14 +534,16 @@ if __name__ == "__main__":
         "--continue",
         "-c",
         dest="continue_from",
+        default="latest",
         help="A snapshot to continue from. This can be 'latest' to continue"
         + "from the latest running snapshot, or an integer corresponding to "
         + "an epochal snapshot.",
     )
     arg_parser.add_argument(
         "--batch_split",
+        "-bs",
         dest="batch_split",
-        default=1,
+        default=2,
         help="This splits the batch into separate subbatches which are "
         + "processed separately, with gradients accumulated across all "
         + "subbatches. This allows for training with large effective batch "
