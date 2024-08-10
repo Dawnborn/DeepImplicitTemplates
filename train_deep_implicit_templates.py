@@ -142,6 +142,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split,
         ws.save_model(experiment_directory, "latest.pth", decoder, epoch)
         ws.save_optimizer(experiment_directory, "latest.pth", optimizer_all, epoch)
         ws.save_latent_vectors(experiment_directory, "latest.pth", lat_vecs, epoch)
+        print("=======Latest model saved to {}".format(experiment_directory))
 
     def save_checkpoints(epoch):
 
@@ -170,6 +171,8 @@ def main_function(experiment_directory, data_source, continue_from, batch_split,
 
     num_samp_per_scene = specs["SamplesPerScene"]
     scene_per_batch = specs["ScenesPerBatch"]
+    # scene_per_batch = 1
+    # batch_split = 1
     # 是否限制sdf值及限制到多少
     clamp_dist = specs["ClampingDistance"]
     minT = -clamp_dist # sdf值下限 -0.1
@@ -216,6 +219,7 @@ def main_function(experiment_directory, data_source, continue_from, batch_split,
         shuffle=True,
         num_workers=num_data_loader_threads,
         drop_last=drop_last,
+        pin_memory=True        
     )
 
     logging.debug("torch num_threads: {}".format(torch.get_num_threads()))
@@ -518,7 +522,20 @@ if __name__ == "__main__":
         # default="examples/sofas_dit_manifoldplus_scanarcw_hjppython",
         # default="examples/sofas_dit_manifoldplus_shapenet",
         # default="examples/sofas_dit",
-        default="examples/sofas_dit_manifoldplus_scanarcw_origprep_all_mypretrained",
+        # default="examples/sofas_dit_manifoldplus_scanarcw_origprep_all_mypretrained",
+        # default="examples/chairs_dit_manifoldplus_scanarcw_origprep_all_mypretrained_b24",
+        # default="examples/bathtubs_dit_manifoldplus_scanarcw_origprep_all_b24",
+        # default="examples/bathtubs_dit_manifoldplus_scanarcw_origprep_all_large_b24",
+        # default="examples/bathtubs_dit_manifoldplus_shapenet_all_b24",
+        # default="examples/tables_dit_manifoldplus_scanarcw_origprep_all_b24",
+        # default="examples/tables_dit_manifoldplus_scanarcw_origprep_all_b24",
+        # default = "examples/tables_dit_manifoldplus_shapenet_b24",
+        # default = "examples/tables_dit_manifoldplus_scanarcw_origprep_all_pretrainedsofas",
+        # default = "examples/tables_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        # default = "examples/beds_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        # default = "examples/cabinets_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        # default = "examples/bookshelfs_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        default = "examples/bathubs_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
         help="The experiment directory. This directory should include "
         + "experiment specifications in 'specs.json', and logging will be "
         + "done in this directory as well.",

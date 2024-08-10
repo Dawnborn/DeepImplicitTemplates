@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # Copyright 2004-present Facebook. All Rights Reserved.
 
-# 用于将存在一起的embeddings拆分然后重建
+# 用于将存在一起的embeddings拆分成独立的latent vectors然后重建
 
 import argparse
 import json
@@ -41,7 +41,19 @@ if __name__ == "__main__":
         # default = "examples/sofas_dit_manifoldplus_scanarcw_origprep_single",
         # default = "examples_old/sofas_dit",
         # default = "examples/sofas_dit_manifoldplus_scanarcw_hjppython",
-        default = "examples/sofas_dit_manifoldplus_shapenet",
+        # default = "examples/sofas_dit_manifoldplus_shapenet",
+        # default = "examples/chairs_dit_manifoldplus_scanarcw_origprep_all_mypretrained_b24",
+        # default = "examples/bathtubs_dit_manifoldplus_scanarcw_origprep_all_b24",
+        # default = "examples/bathtubs_dit_manifoldplus_scanarcw_origprep_all_large_b24",
+        # default = "examples/bathtubs_dit_manifoldplus_shapenet_all_b24",
+        # default = "examples/tables_dit_manifoldplus_scanarcw_origprep_all_b24",
+        # default = "examples/tables_dit_manifoldplus_scanarcw_origprep_all_pretrainedsofas",
+        # default = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/bathubs_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        # default = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/beds_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        # default = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/bookshelfs_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        # default = "examples/tables_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        # default = "examples/beds_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
+        default = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/cabinets_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
         help="The experiment directory which includes specifications and saved model "
         + "files to use for reconstruction",
     )
@@ -100,6 +112,18 @@ if __name__ == "__main__":
         default=256,
         help="Marching cube resolution.",
     )
+    arg_parser.add_argument(
+        "--max_batch",
+        dest="max_batch",
+        type=int,
+        default=2**17,
+        help="batch_size for reconstruction.",
+    )
+
+    arg_parser.add_argument(
+        "--recon_mesh",
+        default=False
+    )
 
     use_octree_group = arg_parser.add_mutually_exclusive_group()
     use_octree_group.add_argument(
@@ -156,11 +180,10 @@ if __name__ == "__main__":
     decoder = torch.nn.DataParallel(decoder)
 
     # 加载模型: 'examples/sofas_dit_manifoldplus_scanarcw/ModelParameters/2000.pth'
-    saved_model_state = torch.load(
-        os.path.join(
-            args.experiment_directory, ws.model_params_subdir, args.checkpoint + ".pth"
-        )
-    )
+    ckpt_path = os.path.join(args.experiment_directory, ws.model_params_subdir, args.checkpoint + ".pth")
+    saved_model_state = torch.load(ckpt_path)
+    print("ckpt_path: {}".format(ckpt_path))
+    import pdb; pdb.set_trace()
     saved_model_epoch = saved_model_state["epoch"]
 
     decoder.load_state_dict(saved_model_state["model_state_dict"]) # 
@@ -205,7 +228,7 @@ if __name__ == "__main__":
 
     err_sum = 0.0
     repeat = 1
-    save_latvec_only = False
+    recon_mesh = args.recon_mesh
     rerun = 0
 
     # 'examples/sofas_dit_manifoldplus_scanarcw/Reconstructions/2000'
@@ -327,10 +350,11 @@ if __name__ == "__main__":
             if not os.path.exists(os.path.dirname(mesh_filename)):
                 os.makedirs(os.path.dirname(mesh_filename))
 
-            if not save_latvec_only:
+            if recon_mesh:
                 start = time.time()
-                max_batch = int(2 ** 19) + int(2**17) # 48G
-                max_batch = int(2 ** 19) # 48G
+                # max_batch = int(2 ** 19) + int(2**17) # 48G
+                # max_batch = int(2 ** 19) # 48G
+                max_batch = args.max_batch
 
                 # max_batch = int(2**17) # 16G
                 # max_batch = int(2**16) # 8G

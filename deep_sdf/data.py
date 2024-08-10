@@ -111,8 +111,14 @@ def unpack_sdf_samples_from_ram(data, subsample=None):
     pos_size = pos_tensor.shape[0]
     neg_size = neg_tensor.shape[0]
 
-    pos_start_ind = random.randint(0, pos_size - half)
-    sample_pos = pos_tensor[pos_start_ind : (pos_start_ind + half)]
+    if pos_size <= half:
+        print("pos_size < half!!!")
+        # import pdb; pdb.set_trace()
+        random_pos = (torch.rand(half) * pos_tensor.shape[0]).long()
+        sample_pos = torch.index_select(pos_tensor, 0, random_pos)
+    else:
+        pos_start_ind = random.randint(0, pos_size - half)
+        sample_pos = pos_tensor[pos_start_ind : (pos_start_ind + half)]
 
     if neg_size <= half:
         random_neg = (torch.rand(half) * neg_tensor.shape[0]).long()
@@ -174,10 +180,13 @@ class SDFSamples(torch.utils.data.Dataset):
         filename = os.path.join(
             self.data_source, ws.sdf_samples_subdir, self.npyfiles[idx]
         )
-        if self.load_ram:
-            return (
-                unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample),
-                idx,
-            )
-        else:
-            return unpack_sdf_samples(filename, self.subsample), idx
+        try:
+            if self.load_ram:
+                return (
+                    unpack_sdf_samples_from_ram(self.loaded_data[idx], self.subsample),
+                    idx,
+                )
+            else:
+                return unpack_sdf_samples(filename, self.subsample), idx
+        except:
+            print("filename {} is problematic".format(filename))

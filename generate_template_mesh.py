@@ -58,7 +58,7 @@ def code_to_mesh(experiment_directory, checkpoint):
     with torch.no_grad():
         deep_sdf.mesh.create_mesh(
             decoder.forward_template,
-            None,
+            None,9
             mesh_filename,
             N=512,
             max_batch=int(2 ** 20),

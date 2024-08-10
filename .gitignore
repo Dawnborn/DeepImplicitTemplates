@@ -26,3 +26,4 @@ scripts/
 pretrained_bk/
 .history
 LatentCodes
+**.csv

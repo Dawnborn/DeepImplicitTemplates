@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name="dditnach_sofaeval"
 #SBATCH --nodes=1
-#SBATCH --cpus-per-task=18
+#SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:1,VRAM:48G
 #SBATCH --constraint="GPU_GEN:AMPERE|GPU_GEN:TURING"
 #SBATCH --mem=64G
@@ -26,4 +26,5 @@
 
 nvidia-smi
 # srun bash train.sh
-srun bash evaluate_reconstruct.bash
+# srun bash evaluate_reconstruct.bash
+srun /usr/wiss/lhao/anaconda3/envs/hjp_deepsdf/bin/python /home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/reconstruct_deep_implicit_templates_generated_latentcode.py

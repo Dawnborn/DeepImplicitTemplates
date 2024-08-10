@@ -31,7 +31,12 @@ if __name__ == "__main__":
         "-e",
         dest="experiment_directory",
         # default="examples/sofas_dit_manifoldplus_scanarcw_origpreprocess",
-        default="/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/sofas_dit_manifoldplus_scanarcw_origprep_all_pretrained",
+        # default="/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/sofas_dit_manifoldplus_scanarcw_origprep_all_pretrained",
+        # default="/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/sofas_dit_manifoldplus_scanarcw_origprep_all_mypretrainedb24_b24",
+        # default="/storage/user/huju/transferred/ws_dditnach/DeepImplicitTemplates/examples/chairs_dit_manifoldplus_scanarcw_origprep_all_mypretrained_b24",
+        # default="/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples_NewPretrainedDITonHJPDataOrig/sofas_dit",
+        # default="/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/sofas_dit_manifoldplus_scanarcw_origprep_all_mypretrainedb24_b24",
+        default="/home/wiss/lhao/storage/user/hjp/ws_dditnach/DeepImplicitTemplates/examples/cabinets_dit_manifoldplus_scanarcw_origprep_all_large_pretrainedsofas",
         help="The experiment directory which includes specifications and saved model "
         + "files to use for reconstruction",
     )
@@ -39,7 +44,8 @@ if __name__ == "__main__":
         "--checkpoint",
         "-c",
         dest="checkpoint",
-        default="1000",
+        # default="1000",
+        default="latest",
         help="The checkpoint weights to use. This can be a number indicated an epoch "
         + "or 'latest' for the latest weights (this is the default)",
     )
@@ -137,13 +143,58 @@ if __name__ == "__main__":
 
     # pdb.set_trace()
 
-    lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/lat_test"
-    lat_root = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/latest/pred_latent"
-    lat_root = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/21/pred_latent"
+    # lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/lat_test"
+    # lat_root = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/latest/pred_latent"
+    # lat_root = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/21/pred_latent"
+
+    # lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_uncond2_l1/output/epoch=43999"
+
+    # lat_root = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff_l1/test/latest/pred_latent"
+
+    # lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/output"
+
+    # lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw7/output/499"
+
+    lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw_sinl1_pc1024_10times42/output/last"
+    lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/output/49999"
+    lat_root = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/output/69999"
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond/output/23999"
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/output/69999"
+
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/DeepImplicitTemplates/examples/chairs_dit_manifoldplus_scanarcw_origprep_all_mypretrained_b24/LatentCodes/train/2000/canonical_mesh_manifoldplus/03001627"
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_neighbor/output/49999/test/lat"
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_noneighbor/output/69999/test/lat"
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_neighbor/output/69999/test/lat"
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_chair_train_neighbor/output/18999/test/lat"
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_chair_train_noneighbor/output/18999/test/lat"
+
+    lat_root = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_noneighbor_pcd128test/output/69999/test/lat"
+
+    # reconstruction_dir = "./test_output"
+    # reconstruction_dir = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/latest/reconstruction"
+    # reconstruction_dir = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/21/reconstruction"
     
-    reconstruction_dir = "./test_output"
-    reconstruction_dir = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/latest/reconstruction"
-    reconstruction_dir = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff/test/21/reconstruction"
+    # # reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_uncond2_l1/output/epoch=43999/reconstruction"
+    # reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_uncond2_l1/reconstruction/epoch=43999"
+
+    # reconstruction_dir = "/home/wiss/lhao/binghui_DONTDELETE_ME/DDIT/DDIT_models_hjp/afterfix_exp_1cl_standard_lr_scheduler_newpretraineddithjpdataorig_diff_l1/test/latest/recon"
+
+    # reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/recon"
+
+    # reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw7/output/499/recon"
+
+    reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw_sinl1_pc1024_10times42/recon/last"
+    reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/recon/49999"
+    reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/recon/69999"
+    reconstruction_dir = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond/recon/23999"
+    reconstruction_dir = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/stage2_diff_cond_scanarcw/recon/69999"
+    reconstruction_dir = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_neighbor/output/49999/test/mesh"
+    reconstruction_dir = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_noneighbor/output/69999/test/mesh"
+    reconstruction_dir = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_neighbor/output/69999/test/mesh"
+    reconstruction_dir = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_chair_train_neighbor/output/18999/test/mesh"
+    reconstruction_dir = "/home/wiss/lhao/storage/user/hjp/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_chair_train_noneighbor/output/18999/test/mesh"
+
+    reconstruction_dir = "/storage/user/huju/transferred/ws_dditnach/Diffusion-SDF/config/ddit_stage2_diff_cond_sofa_train_noneighbor_pcd128test/output/69999/test/mesh"
 
     if not os.path.isdir(reconstruction_dir):
         os.makedirs(reconstruction_dir)
@@ -179,8 +230,10 @@ if __name__ == "__main__":
         # 如果该data_sdf已经有latent_code，则直接加载，如果没有
         start = time.time()
         # pdb.set_trace()
-        if not os.path.isfile(latent_filename): # 'examples/sofas_dit_manifoldplus_scanarcw/Reconstructions/2000/Codes/ScanARCW/04256520/11d5e99e8faa10ff3564590844406360_scene0604_00_ins_5.pth
-            raise Exception("Pretrained latent code not found!")
+        if not os.path.exists(latent_filename): # 'examples/sofas_dit_manifoldplus_scanarcw/Reconstructions/2000/Codes/ScanARCW/04256520/11d5e99e8faa10ff3564590844406360_scene0604_00_ins_5.pth
+            print("Pretrained latent code not found!")
+            import pdb
+            pdb.set_trace()
         else:
             print("========= loading from " + latent_filename)
             logging.info("========= loading from " + latent_filename)
@@ -189,12 +242,17 @@ if __name__ == "__main__":
         # decoder不更新权重，decoder纯推理模式
         decoder.eval()
 
+        if os.path.isfile(mesh_filename) and args.skip:
+            print("{} already exists and will be skipped!!!!!!")
+            continue
+
         if not os.path.exists(os.path.dirname(mesh_filename)):
             os.makedirs(os.path.dirname(mesh_filename))
 
         # pdb.set_trace()
         start = time.time()
-        max_batch = int(2 ** 19)
+        max_batch = int(2 ** 18) 
+        # max_batch = int(2 ** 9)
         with torch.no_grad():
             if args.use_octree:
                 deep_sdf.mesh.create_mesh_octree(
